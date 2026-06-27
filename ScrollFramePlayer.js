@@ -87,8 +87,8 @@ function ScrollFramePlayer(userConfig) {
   const defaults = {
     canvasId:      null,
     frameFolder:   './frames/',
-    totalFrames:   80,
-    framePrefix:   'ezgif-frame-',
+    totalFrames:   74,
+    framePrefix:   "frame_",
     frameExt:      '.jpg',
     framePad:      3,
     frameStart:    1,
