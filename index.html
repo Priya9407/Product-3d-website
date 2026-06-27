@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sony WF-1000XM6 — Silence, Perfected</title>
+  <meta name="description" content="Sony WF-1000XM6 flagship wireless noise cancelling earbuds. Re-engineered for every moment." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #080808; --bg-mid: #0d0d0d; --surface: #111111;
+      --gold: #c9a96e; --gold-light: #e8c98a; --gold-dim: #8a6e3e;
+      --white: #ffffff; --white-90: rgba(255,255,255,.9); --white-60: rgba(255,255,255,.6);
+      --white-35: rgba(255,255,255,.35); --white-15: rgba(255,255,255,.15); --white-08: rgba(255,255,255,.08);
+      --font-display: 'Outfit', sans-serif; --font-body: 'Inter', sans-serif;
+    }
+
+    html { scroll-behavior: auto; background: var(--bg); }
+    body { background: var(--bg); color: var(--white); font-family: var(--font-body); overflow-x: hidden; }
+    ::selection { background: rgba(201,169,110,.3); color: var(--white); }
+    ::-webkit-scrollbar { width: 2px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
+
+    /* ── LOADER ───────────────────────────────────────────── */
+    #loader {
+      position: fixed; inset: 0; background: var(--bg); z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px;
+    }
+    .loader-logo {
+      font-family: var(--font-display); font-size: clamp(12px,1.5vw,16px);
+      font-weight: 300; letter-spacing: .4em; color: var(--white-35); text-transform: uppercase;
+    }
+    .loader-bar-track { width: 200px; height: 1px; background: var(--white-08); overflow: hidden; }
+    .loader-bar-fill  { height: 100%; background: linear-gradient(90deg,var(--gold-dim),var(--gold)); width: 0%; transition: width .1s linear; }
+    .loader-pct       { font-family: var(--font-display); font-size: 11px; font-weight: 300; letter-spacing: .2em; color: var(--white-35); }
+
+    /* ── NAV ──────────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 20px 48px;
+      display: flex; align-items: center; justify-content: space-between;
+      transition: background .4s ease, backdrop-filter .4s ease;
+    }
+    nav.scrolled {
+      background: rgba(8,8,8,.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--white-08);
+    }
+    .nav-brand {
+      font-family: var(--font-display); font-size: 13px; font-weight: 500;
+      letter-spacing: .3em; text-transform: uppercase; color: var(--white-90); text-decoration: none;
+    }
+    .nav-brand span { color: var(--gold); }
+    .nav-links { display: flex; gap: 36px; list-style: none; }
+    .nav-links a {
+      font-size: 11px; font-weight: 400; letter-spacing: .2em;
+      text-transform: uppercase; color: var(--white-60); text-decoration: none; transition: color .3s ease;
+    }
+    .nav-links a:hover { color: var(--gold); }
+    .nav-cta {
+      font-size: 11px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase;
+      color: var(--bg); background: var(--gold); padding: 10px 22px;
+      border: none; cursor: pointer; text-decoration: none;
+      transition: background .3s ease, transform .2s ease;
+      white-space: nowrap;
+    }
+    .nav-cta:hover { background: var(--gold-light); transform: translateY(-1px); }
+
+    /* ── CANVAS WRAPPER ───────────────────────────────────── */
+    /* Height set dynamically in JS (700vh desktop / 400vh mobile) */
+    #canvas-wrapper { position: relative; }
+    #canvas-sticky  {
+      position: sticky; top: 0; width: 100%; height: 100vh;
+      overflow: hidden; background: var(--bg);
+      -webkit-overflow-scrolling: touch; /* iOS scroll smoothness */
+    }
+    #product-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; }
+
+    /* ── COPY OVERLAY ─────────────────────────────────────── */
+    #copy-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+
+    .copy-panel {
+      position: absolute;
+      opacity: 0;
+      transition: opacity .7s cubic-bezier(.4,0,.2,1), transform .7s cubic-bezier(.4,0,.2,1);
+      pointer-events: none;
+    }
+    .copy-panel.visible { opacity: 1; pointer-events: auto; }
+
+    /* Desktop positions */
+    #panel-hero      { top: 50%; left: 8%; transform: translateY(calc(-50% + 24px)); max-width: min(480px,42vw); }
+    #panel-hero.visible { transform: translateY(-50%); }
+
+    #panel-case      { top: 50%; right: 8%; transform: translateY(calc(-50% + 24px)); max-width: min(420px,40vw); text-align: right; }
+    #panel-case.visible { transform: translateY(-50%); }
+
+    #panel-intel     { top: 50%; left: 8%; transform: translateY(calc(-50% + 24px)); max-width: min(460px,42vw); }
+    #panel-intel.visible { transform: translateY(-50%); }
+
+    #panel-immersive { top: 50%; right: 8%; transform: translateY(calc(-50% + 24px)); max-width: min(420px,40vw); text-align: right; }
+    #panel-immersive.visible { transform: translateY(-50%); }
+
+    #panel-cta {
+      bottom: 12%; left: 50%; transform: translateX(-50%) translateY(24px);
+      text-align: center; width: min(700px,80vw);
+    }
+    #panel-cta.visible { transform: translateX(-50%) translateY(0); }
+
+    /* ── TYPOGRAPHY ───────────────────────────────────────── */
+    .label {
+      display: inline-block; font-size: 10px; font-weight: 500;
+      letter-spacing: .4em; text-transform: uppercase; color: var(--gold); margin-bottom: 14px;
+    }
+    .headline-xl {
+      font-family: var(--font-display); font-size: clamp(28px,4.5vw,72px);
+      font-weight: 200; line-height: 1.05; letter-spacing: -.02em; color: var(--white); margin-bottom: 10px;
+    }
+    .headline-xl em {
+      font-style: normal; font-weight: 600;
+      background: linear-gradient(135deg,var(--gold-light),var(--gold));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .headline-lg {
+      font-family: var(--font-display); font-size: clamp(18px,3vw,48px);
+      font-weight: 300; line-height: 1.1; letter-spacing: -.015em; color: var(--white-90); margin-bottom: 8px;
+    }
+    .headline-md {
+      font-family: var(--font-display); font-size: clamp(16px,2.2vw,36px);
+      font-weight: 300; line-height: 1.15; letter-spacing: -.01em; color: var(--white-90); margin-bottom: 18px;
+    }
+    .subtitle {
+      font-size: clamp(13px,1.1vw,18px); font-weight: 300;
+      line-height: 1.65; color: var(--white-60); margin-bottom: 10px;
+    }
+    .body-sm { font-size: clamp(11px,.9vw,14px); font-weight: 300; line-height: 1.7; color: var(--white-35); }
+    .divider { width: 32px; height: 1px; background: var(--gold); margin: 16px 0; opacity: .7; }
+    .divider-right { margin-left: auto; }
+
+    /* ── BUTTONS ──────────────────────────────────────────── */
+    .btn-group { display: flex; gap: 14px; margin-top: 24px; flex-wrap: wrap; }
+    .btn-group.center { justify-content: center; }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 13px 28px; background: var(--gold); color: var(--bg);
+      font-family: var(--font-body); font-size: 12px; font-weight: 600;
+      letter-spacing: .15em; text-transform: uppercase; text-decoration: none;
+      border: none; cursor: pointer;
+      transition: background .3s ease, transform .2s ease, box-shadow .3s ease;
+      pointer-events: auto;
+    }
+    .btn-primary:hover { background: var(--gold-light); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(201,169,110,.25); }
+
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 12px 24px; background: transparent; color: var(--white-60);
+      font-family: var(--font-body); font-size: 12px; font-weight: 400;
+      letter-spacing: .15em; text-transform: uppercase; text-decoration: none;
+      border: 1px solid var(--white-15); cursor: pointer;
+      transition: border-color .3s ease, color .3s ease, transform .2s ease;
+      pointer-events: auto;
+    }
+    .btn-secondary:hover { border-color: var(--gold-dim); color: var(--gold); transform: translateY(-2px); }
+    .btn-arrow { display: inline-block; transition: transform .3s ease; }
+    .btn-primary:hover .btn-arrow, .btn-secondary:hover .btn-arrow { transform: translateX(4px); }
+
+    /* ── SCROLL INDICATOR ─────────────────────────────────── */
+    #scroll-indicator {
+      position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      z-index: 20; transition: opacity .5s ease;
+    }
+    #scroll-indicator.hidden { opacity: 0; pointer-events: none; }
+    .scroll-text { font-size: 9px; font-weight: 400; letter-spacing: .4em; text-transform: uppercase; color: var(--white-35); }
+    .scroll-line {
+      width: 1px; height: 40px;
+      background: linear-gradient(to bottom,var(--white-35),transparent);
+      animation: scrollPulse 2s ease-in-out infinite;
+    }
+    @keyframes scrollPulse {
+      0%,100% { opacity: .3; transform: scaleY(1); }
+      50%      { opacity: 1;  transform: scaleY(1.2); }
+    }
+
+    /* ── PROGRESS BAR ─────────────────────────────────────── */
+    #progress-bar {
+      position: fixed; top: 0; left: 0; height: 2px;
+      background: linear-gradient(90deg,var(--gold-dim),var(--gold));
+      z-index: 200; width: 0%; transition: width .05s linear;
+      box-shadow: 0 0 8px rgba(201,169,110,.4);
+    }
+
+    /* ── PARTICLES ────────────────────────────────────────── */
+    #particles-canvas { position: absolute; inset: 0; pointer-events: none; z-index: 1; opacity: .4; }
+
+    /* ── SPEC TICKER ──────────────────────────────────────── */
+    #spec-ticker {
+      position: absolute; bottom: 36px; right: 48px; z-index: 20;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 6px; pointer-events: none;
+    }
+    .spec-item {
+      font-size: 10px; font-weight: 300; letter-spacing: .2em; text-transform: uppercase;
+      color: var(--white-35); opacity: 0; transform: translateX(12px);
+      transition: opacity .4s ease, transform .4s ease;
+    }
+    .spec-item.active { opacity: 1; transform: translateX(0); }
+    .spec-item .spec-val { color: var(--gold); margin-left: 8px; }
+
+    /* ── SPECS SECTION ────────────────────────────────────── */
+    #specs-section { background: var(--bg); padding: 120px 80px; position: relative; overflow: hidden; }
+    #specs-section::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg,transparent,var(--gold-dim),transparent); opacity: .4;
+    }
+    .specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px 120px; max-width: 1200px; margin: 0 auto; }
+    .specs-intro { grid-column: 1 / -1; margin-bottom: 40px; }
+    .spec-card { position: relative; padding-top: 24px; border-top: 1px solid var(--white-08); }
+    .spec-card::before {
+      content: ''; position: absolute; top: -1px; left: 0; width: 0; height: 1px;
+      background: var(--gold); transition: width .8s cubic-bezier(.4,0,.2,1);
+    }
+    .spec-card.animate::before { width: 60px; }
+    .spec-card-label { font-size: 10px; font-weight: 500; letter-spacing: .35em; text-transform: uppercase; color: var(--gold-dim); margin-bottom: 12px; }
+    .spec-card-value { font-family: var(--font-display); font-size: clamp(28px,3.5vw,52px); font-weight: 200; color: var(--white); line-height: 1; margin-bottom: 6px; }
+    .spec-card-desc  { font-size: 13px; font-weight: 300; color: var(--white-35); line-height: 1.6; }
+    .specs-cta-row   { grid-column: 1 / -1; margin-top: 40px; text-align: center; }
+
+    /* ── FOOTER ───────────────────────────────────────────── */
+    footer {
+      background: var(--bg); border-top: 1px solid var(--white-08);
+      padding: 48px 80px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .footer-brand { font-family: var(--font-display); font-size: 12px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--white-35); }
+    .footer-brand span { color: var(--gold-dim); }
+    .footer-legal { font-size: 10px; color: var(--white-15); letter-spacing: .1em; }
+
+    /* ── VIGNETTE ─────────────────────────────────────────── */
+    .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center,transparent 30%,rgba(8,8,8,.7) 100%); pointer-events: none; z-index: 2; }
+    .glow-bg  { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; }
+    .glow-gold { background: radial-gradient(circle,rgba(201,169,110,.06) 0%,transparent 70%); width: 60vw; height: 60vw; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+
+    /* ── FADE IN ──────────────────────────────────────────── */
+    .fade-in { opacity: 0; transform: translateY(30px); transition: opacity .9s ease, transform .9s ease; }
+    .fade-in.in-view { opacity: 1; transform: translateY(0); }
+
+    /* ════════════════════════════════════════════════════════
+       MOBILE — all responsive overrides in one place
+    ════════════════════════════════════════════════════════ */
+    @media (max-width: 768px) {
+
+      /* Nav */
+      nav { padding: 16px 20px; }
+      .nav-links { display: none; }
+
+      /* Copy panels — stack at bottom so they don't fight the product image */
+      #panel-hero,
+      #panel-case,
+      #panel-intel,
+      #panel-immersive {
+        top: auto;
+        bottom: 8%;
+        left: 5%;
+        right: 5%;
+        max-width: 100%;
+        text-align: left;
+        /* reset desktop transforms; JS visibility toggling only needs opacity */
+        transform: translateY(24px);
+      }
+      #panel-hero.visible,
+      #panel-case.visible,
+      #panel-intel.visible,
+      #panel-immersive.visible {
+        transform: translateY(0);
+      }
+      /* Right-aligned panels become left-aligned on mobile */
+      #panel-case .divider-right,
+      #panel-immersive .divider-right {
+        margin-left: 0;
+      }
+
+      /* CTA panel */
+      #panel-cta {
+        bottom: 6%;
+        width: 90vw;
+        transform: translateX(-50%) translateY(24px);
+      }
+      #panel-cta.visible { transform: translateX(-50%) translateY(0); }
+      .btn-group.center { justify-content: flex-start; }
+
+      /* Hide spec ticker — not enough room */
+      #spec-ticker { display: none; }
+
+      /* Specs section */
+      #specs-section { padding: 72px 20px; }
+      .specs-grid    { grid-template-columns: 1fr; gap: 44px; }
+
+      /* Footer */
+      footer { flex-direction: column; gap: 16px; padding: 36px 20px; text-align: center; }
+
+      /* Scroll indicator moves up a touch on small screens */
+      #scroll-indicator { bottom: 24px; }
+    }
+
+    /* Very small phones — hide nav CTA to avoid cramping */
+    @media (max-width: 400px) {
+      .nav-cta { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- LOADING SCREEN -->
+  <div id="loader">
+    <div class="loader-logo">Sony &nbsp;<span style="color:var(--gold)">WF-1000XM6</span></div>
+    <div class="loader-bar-track"><div class="loader-bar-fill" id="loader-fill"></div></div>
+    <div class="loader-pct" id="loader-pct">0%</div>
+  </div>
+
+  <!-- TOP PROGRESS BAR -->
+  <div id="progress-bar"></div>
+
+  <!-- NAV -->
+  <nav id="main-nav">
+    <a href="#" class="nav-brand">Sony &nbsp;<span>WF-1000XM6</span></a>
+    <ul class="nav-links">
+      <li><a href="#specs-section">Specifications</a></li>
+      <li><a href="#">Support</a></li>
+      <li><a href="#">Compare</a></li>
+    </ul>
+    <a href="#" class="nav-cta">Buy Now</a>
+  </nav>
+
+  <!-- CANVAS SCROLL SECTION -->
+  <div id="canvas-wrapper" data-scroll-wrapper>
+    <div id="canvas-sticky">
+      <canvas id="particles-canvas"></canvas>
+      <canvas id="product-canvas"></canvas>
+      <div class="vignette"></div>
+      <div class="glow-bg glow-gold"></div>
+
+      <div id="copy-overlay">
+        <div class="copy-panel" id="panel-hero">
+          <span class="label">Introducing</span>
+          <h1 class="headline-xl">Sony<br /><em>WF-1000XM6</em></h1>
+          <div class="divider"></div>
+          <p class="subtitle">Silence, perfected.</p>
+          <p class="body-sm">Flagship wireless noise cancelling,<br />re-engineered for every moment.</p>
+        </div>
+
+        <div class="copy-panel" id="panel-case">
+          <span class="label">Craftsmanship</span>
+          <h2 class="headline-lg">Precision begins the moment<br />you open the case.</h2>
+          <div class="divider divider-right"></div>
+          <p class="subtitle">Every curve, hinge, and magnetic connection<br />is engineered for effortless everyday use.</p>
+          <p class="body-sm">Premium craftsmanship meets intelligent design<br />in every interaction.</p>
+        </div>
+
+        <div class="copy-panel" id="panel-intel">
+          <span class="label">Technology</span>
+          <h2 class="headline-lg">Adaptive noise cancelling,<br />redefined.</h2>
+          <div class="divider"></div>
+          <p class="subtitle">Multi-microphone arrays capture your surroundings<br />with remarkable precision.</p>
+          <p class="body-sm">Intelligent processing continuously adapts to your environment.<br />Experience uninterrupted focus wherever life takes you.</p>
+        </div>
+
+        <div class="copy-panel" id="panel-immersive">
+          <span class="label">Sound</span>
+          <h2 class="headline-lg">Immersive,<br />lifelike sound.</h2>
+          <div class="divider divider-right"></div>
+          <p class="subtitle">Precision-engineered drivers deliver exceptional<br />clarity, detail, and depth.</p>
+          <p class="body-sm">AI-powered processing restores richness and texture,<br />bringing every note to life.</p>
+        </div>
+
+        <div class="copy-panel" id="panel-cta">
+          <h2 class="headline-md">Ready whenever you are.</h2>
+          <p class="subtitle" style="color:var(--white-35)">Designed for effortless listening. Crafted for everyday excellence.</p>
+          <div class="btn-group center">
+            <a href="#" class="btn-primary">Experience WF-1000XM6 <span class="btn-arrow">→</span></a>
+            <a href="#specs-section" class="btn-secondary">Explore Specs <span class="btn-arrow">→</span></a>
+          </div>
+          <p class="body-sm" style="margin-top:18px;color:var(--white-15)">Premium wireless audio, engineered for every journey.</p>
+        </div>
+      </div>
+
+      <div id="scroll-indicator">
+        <span class="scroll-text">Scroll</span>
+        <div class="scroll-line"></div>
+      </div>
+
+      <div id="spec-ticker">
+        <div class="spec-item" id="spec-anc">ANC Level<span class="spec-val">Industry Leading</span></div>
+        <div class="spec-item" id="spec-battery">Battery<span class="spec-val">36 Hours Total</span></div>
+        <div class="spec-item" id="spec-bt">Bluetooth<span class="spec-val">5.3</span></div>
+        <div class="spec-item" id="spec-codec">Hi-Res<span class="spec-val">LDAC + DSEE Extreme</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPECIFICATIONS SECTION -->
+  <section id="specs-section">
+    <div class="specs-grid">
+      <div class="specs-intro fade-in">
+        <span class="label">Full Specifications</span>
+        <h2 class="headline-lg">Every detail, engineered.</h2>
+        <p class="subtitle" style="margin-top:12px;max-width:520px;">The WF-1000XM6 represents the pinnacle of Sony's audio engineering, combining decades of acoustic research with cutting-edge AI processing.</p>
+      </div>
+      <div class="spec-card fade-in">
+        <div class="spec-card-label">Noise Cancelling</div>
+        <div class="spec-card-value">QN2e</div>
+        <div class="spec-card-desc">Integrated Processor V2 with Dual Noise Sensor Technology. Industry-leading ANC performance across all environments.</div>
+      </div>
+      <div class="spec-card fade-in">
+        <div class="spec-card-label">Battery Life</div>
+        <div class="spec-card-value">36h</div>
+        <div class="spec-card-desc">12 hours in earbuds + 24 hours from case. 5-minute quick charge gives 60 minutes of playback.</div>
+      </div>
+      <div class="spec-card fade-in">
+        <div class="spec-card-label">Audio Codec</div>
+        <div class="spec-card-value">LDAC</div>
+        <div class="spec-card-desc">Hi-Res Audio Wireless with DSEE Extreme AI upscaling. 990 kbps — the highest quality wireless audio.</div>
+      </div>
+      <div class="spec-card fade-in">
+        <div class="spec-card-label">Driver Unit</div>
+        <div class="spec-card-value">8.4mm</div>
+        <div class="spec-card-desc">Carbon Fiber Composite Dynamic Driver for exceptional low-end response and crisp high-frequency detail.</div>
+      </div>
+      <div class="spec-card fade-in">
+        <div class="spec-card-label">Connectivity</div>
+        <div class="spec-card-value">BT 5.3</div>
+        <div class="spec-card-desc">Multipoint connection to two devices simultaneously. Integrated Processor V2 for stable wireless transmission.</div>
+      </div>
+      <div class="spec-card fade-in">
+        <div class="spec-card-label">Weight</div>
+        <div class="spec-card-value">5.9g</div>
+        <div class="spec-card-desc">Ultra-lightweight design at 5.9g per earbud. Ergonomic fit with three tip sizes for all-day comfort.</div>
+      </div>
+      <div class="specs-cta-row fade-in">
+        <a href="#" class="btn-primary">Shop Now &nbsp;<span class="btn-arrow">→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-brand">Sony &nbsp;<span>WF-1000XM6</span></div>
+    <div class="footer-legal">© 2025 Sony Corporation. All rights reserved.</div>
+  </footer>
+
+  <!-- ScrollFramePlayer utility -->
+  <script src="ScrollFramePlayer.js"></script>
+
+  <script>
+  (function () {
+    'use strict';
+
+    /* ── Mobile detection ──────────────────────────────────── */
+    const isMobile = window.innerWidth < 768;
+
+    /* ── Set scroll wrapper height ─────────────────────────── */
+    // Shorter scroll distance on mobile = less fatigue
+    document.getElementById('canvas-wrapper').style.height = isMobile ? '400vh' : '700vh';
+
+    /* ── Mount ScrollFramePlayer ───────────────────────────── */
+    const player = ScrollFramePlayer({
+      canvasId:     'product-canvas',
+      frameFolder:  './frames/',
+      totalFrames:  80,
+      framePrefix:  'ezgif-frame-',
+      frameExt:     '.jpg',
+      framePad:     3,
+      frameStart:   1,
+      frameStep:    isMobile ? 2 : 1,   // halve frame count on mobile → ~4MB vs ~8MB
+
+      position: 'absolute',
+      top:      '0',
+      left:     '0',
+      width:    '100%',
+      height:   '100%',
+
+      wrapperId: 'canvas-wrapper',
+      fit: 'contain',
+fitScale: isMobile ? 0.75 : 1.0,  // 0.75 = image takes up 75% of available space
+      bgColor:   '#080808',
+      smoothing: isMobile ? 0.25 : 0.18, // slightly snappier on mobile
+      dpr:       Math.min(window.devicePixelRatio || 1, 2), // cap DPR
+
+      loaderId:     'loader',
+      loaderFillId: 'loader-fill',
+      loaderPctId:  'loader-pct',
+
+      onProgress: function (t) {
+        updateCopyPanels(t);
+        updateSpecTicker(t);
+        updateProgressBar(t);
+        updateScrollIndicator(t);
+        updateNav();
+      },
+
+      onLoad: function () {
+        initParticles();
+        requestAnimationFrame(particleLoop);
+        initFadeIns();
+      },
+    });
+
+    /* ── Copy panels ───────────────────────────────────────── */
+    const panels = {
+      hero:      document.getElementById('panel-hero'),
+      case:      document.getElementById('panel-case'),
+      intel:     document.getElementById('panel-intel'),
+      immersive: document.getElementById('panel-immersive'),
+      cta:       document.getElementById('panel-cta'),
+    };
+
+    function updateCopyPanels(t) {
+      panels.hero.classList.toggle     ('visible', t < 0.18);
+      panels.case.classList.toggle     ('visible', t >= 0.18 && t < 0.42);
+      panels.intel.classList.toggle    ('visible', t >= 0.42 && t < 0.66);
+      panels.immersive.classList.toggle('visible', t >= 0.66 && t < 0.86);
+      panels.cta.classList.toggle      ('visible', t >= 0.86);
+    }
+
+    /* ── Spec ticker ───────────────────────────────────────── */
+    const specThresholds = [
+      { id: 'spec-anc',     at: 0.30 },
+      { id: 'spec-battery', at: 0.45 },
+      { id: 'spec-bt',      at: 0.58 },
+      { id: 'spec-codec',   at: 0.72 },
+    ];
+    function updateSpecTicker(t) {
+      specThresholds.forEach(({ id, at }) => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('active', t >= at);
+      });
+    }
+
+    /* ── Progress bar ──────────────────────────────────────── */
+    const progressBar = document.getElementById('progress-bar');
+    function updateProgressBar(t) { progressBar.style.width = (t * 100) + '%'; }
+
+    /* ── Scroll indicator ──────────────────────────────────── */
+    const scrollInd = document.getElementById('scroll-indicator');
+    function updateScrollIndicator(t) { scrollInd.classList.toggle('hidden', t > 0.03); }
+
+    /* ── Nav scroll state ──────────────────────────────────── */
+    const nav = document.getElementById('main-nav');
+    function updateNav() { nav.classList.toggle('scrolled', window.scrollY > 50); }
+
+    /* ── Particles ─────────────────────────────────────────── */
+    const pCanvas = document.getElementById('particles-canvas');
+    const pCtx    = pCanvas.getContext('2d');
+    const particles = [];
+    const PARTICLE_COUNT = isMobile ? 30 : 60; // fewer particles on mobile
+
+    function resizeParticleCanvas() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      pCanvas.width  = window.innerWidth  * dpr;
+      pCanvas.height = window.innerHeight * dpr;
+      pCanvas.style.width  = window.innerWidth  + 'px';
+      pCanvas.style.height = window.innerHeight + 'px';
+      pCtx.scale(dpr, dpr);
+    }
+
+    function initParticles() {
+      resizeParticleCanvas();
+      particles.length = 0;
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        particles.push({
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * window.innerHeight,
+          r: Math.random() * 1.5 + 0.3,
+          vx: (Math.random() - 0.5) * 0.15,
+          vy: -(Math.random() * 0.3 + 0.05),
+          alpha: Math.random() * 0.25 + 0.05,
+          gold: Math.random() > 0.7,
+        });
+      }
+    }
+
+    function particleLoop() {
+      const W = window.innerWidth, H = window.innerHeight;
+      pCtx.clearRect(0, 0, W, H);
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.y < -5)  { p.y = H + 5; p.x = Math.random() * W; }
+        if (p.x < -5)  p.x = W + 5;
+        if (p.x > W+5) p.x = -5;
+        pCtx.beginPath();
+        pCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        pCtx.fillStyle = p.gold ? `rgba(201,169,110,${p.alpha})` : `rgba(255,255,255,${p.alpha})`;
+        pCtx.fill();
+      });
+      requestAnimationFrame(particleLoop);
+    }
+
+    /* ── Orientation change ────────────────────────────────── */
+    // ScrollFramePlayer handles canvas resize internally.
+    // We just need to re-init particles after the browser reflows.
+    window.addEventListener('orientationchange', function () {
+      setTimeout(function () {
+        resizeParticleCanvas();
+        initParticles();
+      }, 300);
+    });
+
+    window.addEventListener('resize', resizeParticleCanvas, { passive: true });
+
+    /* ── Fade-in observer ──────────────────────────────────── */
+    function initFadeIns() {
+      const els = document.querySelectorAll('.fade-in');
+      if (!('IntersectionObserver' in window)) {
+        els.forEach(el => el.classList.add('in-view')); return;
+      }
+      const obs = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('in-view');
+            if (e.target.classList.contains('spec-card'))
+              setTimeout(() => e.target.classList.add('animate'), 100);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+      els.forEach(el => obs.observe(el));
+    }
+
+    /* ── Smooth anchor scrolling ───────────────────────────── */
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', function (e) {
+        const href = this.getAttribute('href');
+        if (href === '#') return;
+        const target = document.querySelector(href);
+        if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+      });
+    });
+
+  })();
+  </script>
+
+</body>
+</html>
